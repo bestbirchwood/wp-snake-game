@@ -1,0 +1,8 @@
+{
+  "name" : "Snake Game",
+  "version" : "0.2",
+  "download_url" : "https://github.com/bestbirchwood/wp-snake-game",
+  "sections" : {
+    "description" : "A simple WordPress plugin that lets users play the classic Snake game in their web browser."
+  }
+}
