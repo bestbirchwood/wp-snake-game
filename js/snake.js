@@ -1,95 +1,133 @@
-// Game variables
 const canvas = document.getElementById('snake-game');
 const ctx = canvas.getContext('2d');
-const gridSize = 16;
-const snakeSpeed = 100;
 
-// Snake and food objects
-let snake = [
-    { x: gridSize * 10, y: gridSize * 10 }
-];
+const GRID_SIZE = 16;
+const SNAKE_SPEED = 100; // in ms
 
-let food = {
-    x: gridSize * Math.floor(Math.random() * gridSize),
-    y: gridSize * Math.floor(Math.random() * gridSize)
-};
-
+const snake = [{ x: GRID_SIZE * 10, y: GRID_SIZE * 10 }];
+let food = { x: GRID_SIZE * Math.floor(Math.random() * GRID_SIZE), y: GRID_SIZE * Math.floor(Math.random() * GRID_SIZE) };
 let dx = 0;
 let dy = 0;
 let lastMove = '';
 
-// Main game loop
-setInterval(function () {
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+let lastRenderTime = 0;
+let gameOver = false;
 
-    // Draw snake
+// Event listeners for keyboard input
+document.addEventListener('keydown', handleKeyPress);
+
+// Game loop
+function main(currentTime) {
+  if (gameOver) {
+    resetGame();
+    return;
+  }
+
+  window.requestAnimationFrame(main);
+
+  const secondsSinceLastRender = (currentTime - lastRenderTime) / 1000;
+
+  if (secondsSinceLastRender < 1 / SNAKE_SPEED) {
+    return;
+  }
+
+  lastRenderTime = currentTime;
+
+  update();
+  draw();
+}
+
+window.requestAnimationFrame(main);
+
+function resetGame() {
+  gameOver = false;
+  snake.length = 1;
+  snake[0] = { x: GRID_SIZE * 10, y: GRID_SIZE * 10 };
+  food = { x: GRID_SIZE * Math.floor(Math.random() * GRID_SIZE), y: GRID_SIZE * Math.floor(Math.random() * GRID_SIZE) };
+  dx = 0;
+  dy = 0;
+  lastMove = '';
+}
+
+// Update function
+function update() {
+  // Update snake position
+  const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+  snake.unshift(head);
+
+  // Check for food collision
+  if (head.x === food.x && head.y === food.y) {
+    food = { x: GRID_SIZE * Math.floor(Math.random() * GRID_SIZE), y: GRID_SIZE * Math.floor(Math.random() * GRID_SIZE) };
+  } else {
+    snake.pop();
+  }
+
+  // Check for game over
+  if (isGameOver()) {
+    gameOver = true;
+  }
+}
+
+// Draw function
+function draw() {
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw snake
+  snake.forEach(function (segment) {
     ctx.fillStyle = '#ffffff';
-    snake.forEach(function (segment) {
-        ctx.fillRect(segment.x, segment.y, gridSize - 1, gridSize - 1);
-    });
+    ctx.fillRect(segment.x, segment.y, GRID_SIZE - 1, GRID_SIZE - 1);
+  });
 
-    // Draw food
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(food.x, food.y, gridSize - 1, gridSize - 1);
+  // Draw food
+  ctx.fillStyle = '#ff0000';
+  ctx.fillRect(food.x, food.y, GRID_SIZE - 1, GRID_SIZE - 1);
+}
 
-    // Update snake position
-    let newX = snake[0].x + dx;
-    let newY = snake[0].y + dy;
+// Event handler for keyboard input
+function handleKeyPress(event) {
+  const keyPressed = event.key;
 
-    // Collision detection
-    if (newX === food.x && newY === food.y) {
-        // Eat food
-        food.x = gridSize * Math.floor(Math.random() * gridSize);
-        food.y = gridSize * Math.floor(Math.random() * gridSize);
-    } else {
-        // Remove tail
-        snake.pop();
-    }
+  if (keyPressed === 'ArrowUp' && lastMove !== 'down') {
+    dx = 0;
+    dy = -GRID_SIZE;
+    lastMove = 'up';
+  }
 
-    // Check for game over
-    if (newX < 0 || newX >= canvas.width || newY < 0 || newY >= canvas.height || collision(newX, newY)) {
-       
-        // Game over, reset the snake
-        snake = [
-            { x: gridSize * 10, y: gridSize * 10 }
-        ];
-        dx = 0;
-        dy = 0;
-    }
+  if (keyPressed === 'ArrowDown' && lastMove !== 'up') {
+    dx = 0;
+    dy = GRID_SIZE;
+    lastMove = 'down';
+  }
 
-    // Add new head
-    snake.unshift({ x: newX, y: newY });
+  if (keyPressed === 'ArrowLeft' && lastMove !== 'right') {
+    dx = -GRID_SIZE;
+    dy = 0;
+    lastMove = 'left';
+  }
 
-    // Handle keyboard input
-    document.onkeydown = function (e) {
-        if (e.key === 'ArrowUp' && lastMove !== 'down') {
-            dx = 0;
-            dy = -gridSize;
-            lastMove = 'up';
-        } else if (e.key === 'ArrowDown' && lastMove !== 'up') {
-            dx = 0;
-            dy = gridSize;
-            lastMove = 'down';
-        } else if (e.key === 'ArrowLeft' && lastMove !== 'right') {
-            dx = -gridSize;
-            dy = 0;
-            lastMove = 'left';
-        } else if (e.key === 'ArrowRight' && lastMove !== 'left') {
-            dx = gridSize;
-            dy = 0;
-            lastMove = 'right';
-        }
-    };
-
-}, snakeSpeed);
+  if (keyPressed === 'ArrowRight' && lastMove !== 'left') {
+    dx = GRID_SIZE;
+    dy = 0;
+    lastMove = 'right';
+  }
+}
 
 // Collision detection
-function collision(x, y) {
-    for (let i = 0; i < snake.length; i++) {
-        if (snake[i].x === x && snake[i].y === y) {
-            return true;
-        }
+function isGameOver() {
+  const head = snake[0];
+
+  // Check collision with walls
+  if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+    return true;
+  }
+
+  // Check collision with itself
+  for (let i = 1; i < snake.length; i++) {
+    if (head.x === snake[i].x && head.y === snake[i].y) {
+      return true;
     }
-    return false;
+  }
+
+  return false;
 }
