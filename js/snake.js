@@ -13,12 +13,16 @@ let lastMove = '';
 let lastRenderTime = 0;
 let gameOver = false;
 
+let currentScore = 0;
+let highScore = 0;
+
 // Event listeners for keyboard input
 document.addEventListener('keydown', handleKeyPress);
 
 // Game loop
 function main(currentTime) {
   if (gameOver) {
+    updateHighScore();
     resetGame();
     return;
   }
@@ -47,6 +51,7 @@ function resetGame() {
   dx = 0;
   dy = 0;
   lastMove = '';
+  currentScore = 0;
 }
 
 // Update function
@@ -58,6 +63,7 @@ function update() {
   // Check for food collision
   if (head.x === food.x && head.y === food.y) {
     food = { x: GRID_SIZE * Math.floor(Math.random() * GRID_SIZE), y: GRID_SIZE * Math.floor(Math.random() * GRID_SIZE) };
+    currentScore++;
   } else {
     snake.pop();
   }
@@ -82,6 +88,19 @@ function draw() {
   // Draw food
   ctx.fillStyle = '#ff0000';
   ctx.fillRect(food.x, food.y, GRID_SIZE - 1, GRID_SIZE - 1);
+
+  // Draw Scores
+  ctx.fillStyle = '#000000';
+  ctx.font = '12px Arial';
+  ctx.fillText('Score: ' + currentScore, 5, 15);
+  ctx.fillText('High score: ' + highScore, 5, 30);
+}
+
+// Update high score function
+function updateHighScore() {
+  if (currentScore > highScore) {
+    highScore = currentScore;
+  }
 }
 
 // Event handler for keyboard input
